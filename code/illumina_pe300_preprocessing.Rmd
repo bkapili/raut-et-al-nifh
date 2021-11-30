@@ -71,8 +71,11 @@ open DL14_E210_1204_BJK_S60_L001_R2_001_fastqc.html
 
 Trim mehtaF/mehtaR primer sequences using cutadapt (v.3.5).
 ```{bash run cutadapt}
+# Create new directory
+mkdir ../cutadapt; cd ../cutadapt
+
 # Create file of sample names to loop through
-ls *.fastq | sed 's/_R1_001.fastq//' | sed 's/_R2_001.fastq//' | uniq > sample_names.txt
+ls ../raw/*.fastq | sed 's/_R1_001.fastq//' | sed 's/_R2_001.fastq//' | sed 's/.*\///' | uniq > sample_names.txt
 
 # Set read length filter
 EXPECTED_LEN=273
@@ -90,7 +93,7 @@ for f in `cat sample_names.txt`; do
     -m $EXPECTED_LEN -M $EXPECTED_LEN \
     -o "$f"_R1_001_CUTADAPT.fastq \
     -p "$f"_R2_001_CUTADAPT.fastq \
-    "$f"_R1_001.fastq "$f"_R2_001.fastq > tmp.txt
+    ../raw/"$f"_R1_001.fastq ../raw/"$f"_R2_001.fastq > tmp.txt
   
   sed -i '1 s/^/sample\t/' tmp.txt
   sed -i "2 s/^/$f\t/" tmp.txt
@@ -140,13 +143,35 @@ TRIMMED_LEN=$(cat prinseq_log.txt | cut -f3 | uniq)
 if [ "$TRIMMED_LEN" == "$EXPECTED_LEN" ]; then
   echo "Success! Length of trimmed reads are identical and equal to specified length. Proceed to FIGARO."; else
   echo "Warning! Length of trimmed reads are not identical and/or not equal to specified length. Inspect cutadapt output before proceeding to FIGARO."; fi
+  
+# Move log files
+mkdir ./log; mv *.txt ./log
 ```
 
-Move all cutadapt files to new directory.
-```{bash move to new directory}
-# Create new directory and move trimmed fastq files
-mkdir ../cutadapt
-mv *_CUTADAPT.fastq ../cutadapt && mv cutadapt_log.txt ../cutadapt && mv prinseq_log.txt ../cutadapt
+
+# Step 2: Determine optimal quality-trimming positions for DADA2
+
+Rename files as FIGARO requires.
+```{bash rename files}
+cd ../cutadapt
+
+rename _CUTADAPT.fastq .fastq  *.fastq
+rename DL13_YR_ DL13-YR- *.fastq
+rename _EP \\-EP-CUTADAPT *.fastq
+for file in *; do mv "$file" "$(echo "$file" | sed 's/\\//g')"; done
 ```
 
-Step 2: 
+Run FIGARO requiring minimum overlap of 20 bp. -m set to 18 as workaround to primers being pre-trimmed and primer lengths cannot be set to 0. See [here](https://githubmemory.com/repo/Zymo-Research/figaro/issues/17).
+```{bash run figaro}
+# Make new directory
+mkdir ../figaro; cd ../figaro
+
+# Run FIGARO
+figaro.py \
+  -i ../cutadapt \
+  -o ./ \
+  -a 370 \
+  -f 1 \
+  -r 1 \
+  -m 18
+```
