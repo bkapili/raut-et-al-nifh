@@ -19,13 +19,11 @@ if [ "$TRIMMED_LEN" == "$EXPECTED_LEN" ]; then
   
 # Rename files
 rename _CUTADAPT.fastq .fastq  *.fastq
-rename DL13_OC17_ DL13-OC17- *.fastq
-rename DL13_MOCK_ DL13-MOCK- *.fastq
-rename DL13_BLAN_ DL13-BLAN- *.fastq
+rename DL13_YR_ DL13-YR- *.fastq
 rename _EP \\-EP-CUTADAPT *.fastq
 for file in *; do mv "$file" "$(echo "$file" | sed 's/\\//g')"; done
 
-# Make new directory
+# Make figaro output directory
 mkdir ../figaro
 
 # Run FIGARO
