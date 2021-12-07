@@ -1,5 +1,7 @@
-### Load required packages
+# Portions of code adapted from DADA2 tutorial (v.1.16)
+# (https://benjjneb.github.io/dada2/tutorial.html)
 
+### Load required packages
 # List required packages
 cranPackages <- c("BiocManager", "ggplot2", "dplyr", "tidyr", "jsonlite")
 biocPackages <- c("phyloseq", "dada2", "Biostrings")
@@ -93,12 +95,12 @@ sum(chimFiltSeqtab)/sum(lenFiltSeqtab)
 
 # Save seqtabs
 dir.create("../robjects")
-saveRDS(rawSeqtab, paste0("../robjects", "/rawSeqtab.rds"))
-saveRDS(lenFiltSeqtab, paste0("../robjects", "/lenFiltSeqtab.rds"))
-saveRDS(chimFiltSeqtab, paste0("../robjects", "/chimFiltSeqtab.rds"))
+saveRDS(rawSeqtab, "../robjects/rawSeqtab.rds")
+saveRDS(lenFiltSeqtab, "../robjects/lenFiltSeqtab.rds")
+saveRDS(chimFiltSeqtab, "../robjects/chimFiltSeqtab.rds")
 
 
-### Track read retention
+### Track read and ASV retention
 # Load cutadapt log
 cutLog <- read.table(file = "../data/cutadapt/log/cutadapt_log.txt", header = TRUE) %>%
   arrange(sample)
@@ -107,16 +109,26 @@ cutLog <- read.table(file = "../data/cutadapt/log/cutadapt_log.txt", header = TR
 getN <- function(x) sum(getUniques(x))
 
 # Apply function to output from each step and store in matrix
-track <- cbind(pull(cutLog, in_reads), out, sapply(dadaFs, getN), sapply(dadaRs, getN),
+readTrack <- cbind(pull(cutLog, in_reads), out, sapply(dadaFs, getN), sapply(dadaRs, getN),
                sapply(mergers, getN), rowSums(lenFiltSeqtab), rowSums(chimFiltSeqtab))
 
 # Rename column names to step names and row names to sample names
-colnames(track) <- c("raw", "cutadapt", "filtered", "denoisedF", "denoisedR",
+colnames(readTrack) <- c("raw", "cutadapt", "filtered", "denoisedF", "denoisedR",
                      "merged", "length_filtered", "chim_filtered")
-rownames(track) <- sampleNames
+rownames(readTrack) <- sampleNames
 
-# Write read retention data frame to csv
-write.csv(track, file = "../supplemental/read_retention.csv", quote = FALSE,
+# Write read retention matrix to csv
+write.csv(readTrack, file = "../supplemental/read_retention.csv", quote = FALSE,
+          row.names = TRUE, col.names = TRUE)
+
+# Record number of ASVs in matrix
+asvTrack <- cbind(ncol(rawSeqtab), ncol(lenFiltSeqtab), ncol(chimFiltSeqtab))
+
+# Rename column names to step names
+colnames(asvTrack) <- c("merged", "length_filtered", "chim_filtered")
+
+# Write ASV retention matrix to csv
+write.csv(asvTrack, file = "../supplemental/asv_retention.csv", quote = FALSE,
           row.names = TRUE, col.names = TRUE)
 
 
@@ -128,20 +140,20 @@ sampMetadata <- read.csv(file = "../data/SampleID_ExperimentID.csv",
 
 # Format ASV table for otu_table class
 asvSeqtab <- chimFiltSeqtab
-colnames(asvSeqtab) <- paste("ASV", 1:ncol(asvSeqtab), sep = ".")
+colnames(asvSeqtab) <- paste0("ASV", 1:ncol(asvSeqtab))
 
 # Format sequences for refseq class
 seqs <- colnames(chimFiltSeqtab) %>%
   DNAStringSet()
-names(seqs) <- paste("ASV", 1:length(seqs), sep = ".")
+names(seqs) <- paste0("ASV", 1:length(seqs))
 
 # Format sample metadata for sample_data class
 sampMetadata <- sampMetadata %>%
-  separate(ExperimentID, sep = "-", c("project", "site_depth",  "deployment", "core",
-                           "sed_depth", "nucleic_acid", "replicate", "gene"))
+  separate(ExperimentID, sep = "-", c("project", "sample_name", "seaweed_species",
+                                      "day_of_decay", "replicate", "nucleic_acid", "gene"))
 
 # Build and save phyloseq object
 psRaw <- phyloseq(otu_table(asvSeqtab, taxa_are_rows = FALSE),  
                refseq(seqs),
                sample_data(sampMetadata))
-saveRDS(psRaw, paste0("../robjects", "/psRaw.rds"))
+saveRDS(psRaw, "../robjects/psRaw.rds")
