@@ -40,6 +40,7 @@ cutoffs <- ppit::nifH_cutoffs_v2
 # Optimize phylogenetic neighborhood
 optThresh <- tree.partition(type, query, tree, alignment, taxonomy, cutoffs)
 print(optThresh)
+#optThresh = 0.42 for MIN_HAMMING=1
 #optThresh <- cutoffs[1,5]
 
 # Infer taxonomy
