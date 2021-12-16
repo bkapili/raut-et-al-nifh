@@ -1,3 +1,15 @@
+# -------------------------------------------------------------
+# Script purpose: Infer taxonomic identities for nifH ASVs using
+#                 PPIT (v.1.2.0).
+#
+# Inputs:
+#   * Phyloseq object before decontamination ("psRaw.rds")
+#   * SEPP output tree ("sepp_placement.nwk")
+#   * SEPP output alignment ("sepp_alignment.fasta")
+#
+# Output: Phyloseq object with taxonomic inferences (overwritten "psRaw.rds")
+# -------------------------------------------------------------
+
 ### Load required packages
 # List required packages
 cranPackages <- c("devtools", "BiocManager", "dplyr", "tidyr", "ape")
@@ -76,4 +88,4 @@ tax_table[match(unidentified, rownames(tax_table)),] <- "unidentified"
 tax_table(psRaw) <- tax_table
 
 # Save phyloseq object
-saveRDS(psRaw, "../robjects/psTaxa.rds")
+saveRDS(psRaw, "../robjects/psRaw.rds")

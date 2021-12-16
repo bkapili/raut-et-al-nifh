@@ -1,3 +1,17 @@
+# -------------------------------------------------------------
+# Script purpose: Place ASVs on reference nifH tree from PPIT
+#                 (v.1.2.0) using SEPP for subsequent taxonomic inferencing.
+#
+# Input:  Phyloseq object containing chimera-removed ASV sequences
+#         ("psRaw.rds")
+#
+# Output: Tree in Newick format of ASVs placed on reference tree
+#         ("sepp_placement.nwk").
+# -------------------------------------------------------------
+
+# Prepare necessary input files
+Rscript sepp_input_prep.R
+
 # Run SEPP
 run_sepp.py \
   -t ../robjects/nifH_reference_tree_v2.nwk \

@@ -1,3 +1,15 @@
+# -------------------------------------------------------------
+# Script purpose: Select optimal trimming positions for forward
+#                 and reverse reads using FIGARO.
+#
+# Inputs:
+#     * Primer-removed .fastq files
+#     * List of sample names ("sample_names.txt")
+#
+# Output: .json file containing ranking of best pairs of forward
+#         and reverse trim positions ("trimParameters.json").
+# -------------------------------------------------------------
+
 # Change directories
 cd ../data/cutadapt
 

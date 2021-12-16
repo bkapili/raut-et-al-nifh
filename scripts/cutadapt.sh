@@ -1,3 +1,13 @@
+# -------------------------------------------------------------
+# Script purpose: Remove primer sequences using cutadapt.
+#
+# Input:  Raw paired-end .fastq files
+#
+# Outputs:
+#   * Primer-removed .fastq files in a new directory named "cutadapt"
+#   * A tab-delimited summary of run statistics ("cutadapt_log.txt")
+# -------------------------------------------------------------
+
 # Create new directory
 mkdir -p ../data/cutadapt/log
 

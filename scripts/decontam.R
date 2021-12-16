@@ -1,5 +1,24 @@
-# Portions of code adapted from decontam tutorial
-# (https://benjjneb.github.io/decontam/vignettes/decontam_intro.html)
+# -------------------------------------------------------------
+# Script purpose: Remove putative contaminant ASVs using decontam
+#                 with the frequency method. 
+#
+# Inputs:
+#   * Raw phyloseq object ("psRaw.rds")
+#   * PicoGreen dsDNA quantitation data ("decontam_dna_quantitation.csv")
+#   * Previous log of per-sample read tracking ("read_retention.csv") 
+#   * Previous log of total ASV tracking ("asv_retention.csv")
+#
+# Outputs:
+#   * Decontaminated phyloseq object ("psNoContam.rds")
+#   * Plot of per-sample library sizes ("library_sizes.pdf")
+#   * Histogram of decontam scores with num. of ASVs per bin ("decontam_score_asvs.pdf")
+#   * Histogram of decontam scores with num. of reads per bin ("decontam_score_reads.pdf")
+#   * Updated log of per-sample read tracking after contaminant removal ("read_retention.csv")
+#   * Updated log of total ASV tracking after contaminant removal ("asv_retention.csv")
+#
+# Notes:  Portions of code adapted from decontam tutorial
+#         (https://benjjneb.github.io/decontam/vignettes/decontam_intro.html)
+# -------------------------------------------------------------
 
 ### Load required packages
 # List required packages
@@ -26,33 +45,30 @@ suppressPackageStartupMessages(lapply(c(cranPackages, biocPackages),
 
 ### Prepare phyloseq object for decontam
 # Load phyloseq object
-psTaxa <- readRDS(file = "../robjects/psTaxa.rds")
+psRaw <- readRDS(file = "../robjects/psRaw.rds")
 
-# Add sample_data variable of sample type
+# Add variable to sample_data of sample type
 blankMock <- c("Blank", "Mock")
-sampleInd <- sample_data(psTaxa)$sample_name %>%
+sampleInd <- sample_data(psRaw)$sample_name %>%
   grep(paste(blankMock, collapse = "|"), ., invert = TRUE)
 
-blankInd <- sample_data(psTaxa)$sample_name %>%
-  grep("Blank", .)
+blankInd <- sample_data(psRaw)$sample_name %>% grep("Blank", .)
+mockInd <- sample_data(psRaw)$sample_name %>% grep("Mock", .)
 
-mockInd <- sample_data(psTaxa)$sample_name %>%
-  grep("Mock", .)
-
-sample_data(psTaxa)$sample_type[sampleInd] <- "Sample"
-sample_data(psTaxa)$sample_type[blankInd] <- "Negative"
-sample_data(psTaxa)$sample_type[mockInd] <- "Mock"
+sample_data(psRaw)$sample_type[sampleInd] <- "Sample"
+sample_data(psRaw)$sample_type[blankInd] <- "Negative"
+sample_data(psRaw)$sample_type[mockInd] <- "Mock"
 
 # Add sample_data variable of DNA quantitation data
 quant <- read.csv(file = "../data/decontam_dna_quantitation.csv")
-sample_data(psTaxa)$picogreen_ngul <- as.numeric(quant$picogreen_ngul)
+sample_data(psRaw)$picogreen_ngul <- as.numeric(quant$picogreen_ngul)
 
 
 ### Plot library sizes
-dfLibSize <- psTaxa %>%
+dfLibSize <- psRaw %>%
   sample_data %>%
   data.frame %>%
-  mutate(library_size = sample_sums(psTaxa)) %>%
+  mutate(library_size = sample_sums(psRaw)) %>%
   arrange(library_size)
 
 pLibSizes <- ggplot(data = dfLibSize, aes(x = seq(nrow(dfLibSize)),
@@ -70,16 +86,17 @@ ggsave(filename = "../supplemental/library_sizes.pdf", plot = pLibSizes,
 
 ### Run decontam with frequency method
 # Remove negatives, mocks, and sample with no PicoGreen data
-psDecontam <- subset_samples(psTaxa, sample_type != "Negative" &
-                                   sample_type !="Mock" & is.na(picogreen_ngul) == FALSE)
+psDecontam <- subset_samples(psRaw, sample_type != "Negative" &
+                               sample_type !="Mock" &
+                               is.na(picogreen_ngul) == FALSE)
+
 dfDecontam <- isContaminant(psDecontam, method = "frequency",
                                 conc = "picogreen_ngul", threshold = 0.1)
 
 # Add total number of reads for each taxon
-dfDecontam <- dfDecontam %>%
-  mutate(reads = taxa_sums(psDecontam))
+dfDecontam <- dfDecontam %>% mutate(reads = taxa_sums(psDecontam))
 
-# Plot decontam score histograms
+# Export decontam score histograms separately binned by ASVs and reads
 pHistASV <- ggplot(data = dfDecontam, aes(x = p)) + 
   geom_histogram(binwidth = 0.01) +
   geom_vline(xintercept = 0.1, linetype = "dashed") +
@@ -112,11 +129,8 @@ dfDecontam <- dfDecontam %>%
   arrange(-contaminant, Domain, Phylum, Class, Order, Family, Genus)
 
 # Remove putative contaminants
-notContam <- dfDecontam %>%
-  filter(contaminant == FALSE) %>%
-  rownames
-
-psNoContam <- prune_taxa(notContam, psTaxa)
+notContam <- dfDecontam %>% filter(contaminant == FALSE) %>% rownames
+psNoContam <- prune_taxa(notContam, psRaw)
 
 # Write phyloseq object
 saveRDS(psNoContam, file = "../robjects/psNoContam.rds")
