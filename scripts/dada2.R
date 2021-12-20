@@ -3,7 +3,6 @@
 #
 # Inputs:
 #   * Primer-removed paired-end .fastq files
-#   * FIGARO output of ranked trimming positions ("trimParameters.json")
 #   * Sample metadata ("SampleID_ExperimentID.csv")
 #   * Tab-delimited summary of cutadapt statistics ("cutadapt_log.txt")
 #
@@ -55,17 +54,11 @@ filtFs <- file.path("../data/filtered", paste0(sampleNames, "_F_filt.fastq.gz"))
 filtRs <- file.path("../data/filtered", paste0(sampleNames, "_R_filt.fastq.gz"))
 names(filtFs) <- sampleNames
 names(filtRs) <- sampleNames
-
-# Read in optimal trim positions
-trimParams <- fromJSON("../data/figaro/trimParameters.json", flatten = TRUE) %>%
-  filter(row_number() == 1) %>%
-  pull(trimPosition) %>%
-  unlist
   
 # Trim and quality-filter
-out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen = c(trimParams[1], trimParams[2]),
+out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen = c(250, 250,
                      maxN = 0, maxEE = c(2,2), truncQ = 2, rm.phix = TRUE,
-                     compress = TRUE, multithread = FALSE)
+                     compress = TRUE, multithread = FALSE))
 
 
 ### Model error rates
@@ -90,8 +83,8 @@ ggsave(filename = "../supplemental/learned_errors_R.pdf", plot = pErrR,
        dpi = 300, useDingbats=FALSE)
 
 ### Infer ASVs
-dadaFs <- dada(derepFs, err = errF, multithread = TRUE, pool = TRUE, MIN_HAMMING = 8)
-dadaRs <- dada(derepRs, err = errR, multithread = TRUE, pool = TRUE, MIN_HAMMING = 8)
+dadaFs <- dada(derepFs, err = errF, multithread = TRUE, pool = TRUE, MIN_HAMMING = 1)
+dadaRs <- dada(derepRs, err = errR, multithread = TRUE, pool = TRUE, MIN_HAMMING = 1)
 
 
 ### Create and filter ASV table
