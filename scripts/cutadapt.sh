@@ -49,3 +49,9 @@ rm tmp.txt
 
 # Run script to reformat cutadapt log
 Rscript ./cutadapt_log_clean.R
+
+# Rename files
+rename _CUTADAPT.fastq .fastq  *.fastq
+rename DL13_YR_ DL13-YR- *.fastq
+rename _EP \\-EP-CUTADAPT *.fastq
+for file in *; do mv "$file" "$(echo "$file" | sed 's/\\//g')"; done
