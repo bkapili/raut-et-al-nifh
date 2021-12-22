@@ -50,14 +50,12 @@ taxonomy <- ppit::nifH_reference_taxonomy_v2
 cutoffs <- ppit::nifH_cutoffs_v2
 
 # Optimize phylogenetic neighborhood
-optThresh <- tree.partition(type, query, tree, alignment, taxonomy, cutoffs)
+#optThresh <- 0.42 # UNCOMMENT TO SKIP OPTIMIZATION
+optThresh <- tree.partition(type, query, tree, alignment, taxonomy, cutoffs) # COMMENT TO SKIP OPTIMIZATION
 print(optThresh)
-#optThresh = 0.42 for MIN_HAMMING=1
-#optThresh <- cutoffs[1,5]
 
 # Infer taxonomy
-dfInferences <- ppit(type, query, tree, alignment,
-                     taxonomy, optThresh, cutoffs)
+dfInferences <- ppit(type, query, tree, alignment, taxonomy, optThresh, cutoffs)
 
 # Requery those with pat distance fail
 requery <- dfInferences %>%
