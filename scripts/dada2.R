@@ -56,9 +56,9 @@ names(filtFs) <- sampleNames
 names(filtRs) <- sampleNames
   
 # Trim and quality-filter
-out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen = c(250, 250,
+out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen = c(250, 250),
                      maxN = 0, maxEE = c(2,2), truncQ = 2, rm.phix = TRUE,
-                     compress = TRUE, multithread = FALSE))
+                     compress = TRUE, multithread = FALSE)
 
 
 ### Model error rates
